@@ -1,0 +1,9 @@
+{
+  "model_name": "LightGBM",
+  "version": "v1.0.0",
+  "threshold": 0.7,
+  "lookback_hours": 24,
+  "prediction_horizon_hours": 24,
+  "feature_count": 43,
+  "selected_model_reason": "Best overall ROC-AUC, PR-AUC and F1-score among tested models"
+}

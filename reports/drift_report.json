@@ -1,0 +1,474 @@
+{
+  "status": "warning",
+  "drift_detected": true,
+  "reference_path": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\data\\train_dataset_final.parquet",
+  "current_source": "database:lab_events",
+  "n_reference_rows": 428997,
+  "n_current_rows": 3,
+  "n_features_checked": 43,
+  "n_drifted_features": 30,
+  "drifted_features": [
+    "creatinine_last",
+    "creatinine_delta",
+    "bun_last",
+    "anion_gap_last",
+    "sodium_last",
+    "chloride_last",
+    "bicarbonate_last",
+    "hours_since_icu_intime",
+    "bun_delta",
+    "platelets_last",
+    "calcium_delta",
+    "potassium_last",
+    "wbc_last",
+    "phosphate_last",
+    "calcium_last",
+    "hematocrit_delta",
+    "phosphate_delta",
+    "magnesium_last",
+    "chloride_delta",
+    "hemoglobin_last",
+    "glucose_delta",
+    "glucose_last",
+    "bicarbonate_delta",
+    "wbc_delta",
+    "sodium_delta",
+    "magnesium_delta",
+    "hemoglobin_delta",
+    "anion_gap_delta",
+    "potassium_delta",
+    "platelets_delta"
+  ],
+  "top_drifted_features": [
+    {
+      "feature": "hours_since_icu_intime",
+      "psi": 13.20927607243361,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "chloride_last",
+      "psi": 10.541540415166487,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "platelets_last",
+      "psi": 10.520690032504804,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "hemoglobin_last",
+      "psi": 10.502952558509653,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bicarbonate_last",
+      "psi": 9.7169035896341,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "potassium_last",
+      "psi": 9.293833086371952,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "phosphate_last",
+      "psi": 9.264042374138835,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "sodium_last",
+      "psi": 9.232133125499999,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bun_last",
+      "psi": 8.927738656630234,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "wbc_last",
+      "psi": 8.900558282610103,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    }
+  ],
+  "feature_results": [
+    {
+      "feature": "hours_since_icu_intime",
+      "psi": 13.20927607243361,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "chloride_last",
+      "psi": 10.541540415166487,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "platelets_last",
+      "psi": 10.520690032504804,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "hemoglobin_last",
+      "psi": 10.502952558509653,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bicarbonate_last",
+      "psi": 9.7169035896341,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "potassium_last",
+      "psi": 9.293833086371952,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "phosphate_last",
+      "psi": 9.264042374138835,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "sodium_last",
+      "psi": 9.232133125499999,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bun_last",
+      "psi": 8.927738656630234,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "wbc_last",
+      "psi": 8.900558282610103,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "glucose_last",
+      "psi": 8.773866769918525,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "calcium_last",
+      "psi": 8.684759912251103,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "creatinine_last",
+      "psi": 8.081187604059672,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "anion_gap_last",
+      "psi": 7.584263439031515,
+      "drift_level": "major",
+      "reference_missing_rate": 1.3986111790991545e-05,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": -1.3986111790991545e-05
+    },
+    {
+      "feature": "magnesium_last",
+      "psi": 5.965735514827223,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "sodium_delta",
+      "psi": 5.535843762228399,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "potassium_delta",
+      "psi": 5.258508586433212,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "glucose_delta",
+      "psi": 5.135335799984051,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bicarbonate_delta",
+      "psi": 4.72255168677831,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bun_delta",
+      "psi": 4.470171533351659,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "chloride_delta",
+      "psi": 4.197846995807172,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "phosphate_delta",
+      "psi": 3.8121421113802842,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "calcium_delta",
+      "psi": 3.690331072311908,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "anion_gap_delta",
+      "psi": 3.592064753905926,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "platelets_delta",
+      "psi": 3.3432239060368447,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "hemoglobin_delta",
+      "psi": 3.299648937785027,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "creatinine_delta",
+      "psi": 3.233586613505799,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "wbc_delta",
+      "psi": 3.203152199174328,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "magnesium_delta",
+      "psi": 2.5643957803392072,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "hematocrit_delta",
+      "psi": 2.019634785923339,
+      "drift_level": "major",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "phosphate_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "gender_male",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bun_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "potassium_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "sodium_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "chloride_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "bicarbonate_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "calcium_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "glucose_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "magnesium_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "anion_gap_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "hemoglobin_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    },
+    {
+      "feature": "hematocrit_last_is_missing",
+      "psi": 0.0,
+      "drift_level": "stable",
+      "reference_missing_rate": 0.0,
+      "current_missing_rate": 0.0,
+      "missing_rate_diff": 0.0
+    }
+  ],
+  "alerts": [
+    "30 features have major PSI drift.",
+    "Current production sample is small; interpret drift results cautiously."
+  ]
+}

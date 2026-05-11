@@ -1,0 +1,15 @@
+[
+  {
+    "model_name": "LightGBM",
+    "model_version": "v1.0.0",
+    "model_type": "binary_classifier",
+    "artifact_path": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\model\\lightgbm",
+    "threshold": 0.7,
+    "roc_auc": 0.8414114807873635,
+    "pr_auc": 0.4644634407004937,
+    "precision": 0.4331042143997778,
+    "recall": 0.5817944413355717,
+    "f1": 0.49655721393034824,
+    "status": "production"
+  }
+]

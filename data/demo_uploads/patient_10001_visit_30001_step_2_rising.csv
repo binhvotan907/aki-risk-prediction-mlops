@@ -1,0 +1,2 @@
+subject_id,stay_id,gender,icu_intime,charttime,creatinine,bun,sodium,potassium,chloride,bicarbonate,glucose,calcium,magnesium,phosphate,anion_gap,hemoglobin,hematocrit,wbc,platelets
+10001,30001,male,2026-04-25T08:00:00,2026-04-25T14:00:00,1.4,28,136,4.8,99,20,145,8.4,2.2,4.3,16,11.9,36,10.8,205

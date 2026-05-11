@@ -1,0 +1,40 @@
+{
+  "train_shape": [
+    428997,
+    47
+  ],
+  "val_shape": [
+    89418,
+    47
+  ],
+  "test_shape": [
+    89811,
+    47
+  ],
+  "feature_count": 43,
+  "positive_rate_train": 0.11296349391720688,
+  "positive_rate_val": 0.11020152541993782,
+  "positive_rate_test": 0.11938403981694892,
+  "best_threshold": 0.7,
+  "best_metric": "f1_score",
+  "test_metrics": {
+    "threshold": 0.7,
+    "accuracy": 0.859159791116901,
+    "precision": 0.4331042143997778,
+    "recall": 0.5817944413355717,
+    "f1_score": 0.49655721393034824,
+    "roc_auc": 0.8414114807873635,
+    "pr_auc": 0.4644634407004937,
+    "tn": 70924,
+    "fp": 8165,
+    "fn": 4484,
+    "tp": 6238
+  },
+  "model_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\model\\lightgbm",
+  "reports_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\reports",
+  "mlflow": {
+    "enabled": true,
+    "status": "failed",
+    "reason": "API request to http://localhost:5000/api/2.0/mlflow/experiments/get-by-name failed with exception HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/2.0/mlflow/experiments/get-by-name?experiment_name=aki-risk-prediction (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+  }
+}

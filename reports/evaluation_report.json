@@ -1,0 +1,51 @@
+{
+  "model_name": "LightGBM",
+  "model_version": "v1.0.0",
+  "threshold": 0.7,
+  "test_shape": [
+    89811,
+    47
+  ],
+  "feature_count": 43,
+  "metrics": {
+    "accuracy": 0.859159791116901,
+    "precision": 0.4331042143997778,
+    "recall": 0.5817944413355717,
+    "f1_score": 0.49655721393034824,
+    "roc_auc": 0.8414114807873635,
+    "pr_auc": 0.4644634407004937
+  },
+  "confusion_matrix": {
+    "tn": 70924,
+    "fp": 8165,
+    "fn": 4484,
+    "tp": 6238
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.9405368130702313,
+      "recall": 0.8967618758613713,
+      "f1-score": 0.9181278600878982,
+      "support": 79089.0
+    },
+    "1": {
+      "precision": 0.4331042143997778,
+      "recall": 0.5817944413355717,
+      "f1-score": 0.49655721393034824,
+      "support": 10722.0
+    },
+    "accuracy": 0.859159791116901,
+    "macro avg": {
+      "precision": 0.6868205137350045,
+      "recall": 0.7392781585984716,
+      "f1-score": 0.7073425370091232,
+      "support": 89811.0
+    },
+    "weighted avg": {
+      "precision": 0.8799574595061401,
+      "recall": 0.859159791116901,
+      "f1-score": 0.8677990532813683,
+      "support": 89811.0
+    }
+  }
+}
