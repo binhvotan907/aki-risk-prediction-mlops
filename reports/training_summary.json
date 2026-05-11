@@ -30,11 +30,14 @@
     "fn": 4484,
     "tp": 6238
   },
-  "model_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\model\\lightgbm",
-  "reports_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\reports",
+  "model_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\model\\candidates\\lightgbm_20260511154852",
+  "reports_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\reports\\candidates\\lightgbm_20260511154852",
   "mlflow": {
     "enabled": true,
     "status": "failed",
-    "reason": "API request to http://localhost:5000/api/2.0/mlflow/experiments/get-by-name failed with exception HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/2.0/mlflow/experiments/get-by-name?experiment_name=aki-risk-prediction (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
-  }
+    "reason": "'charmap' codec can't encode character '\\U0001f3c3' in position 0: character maps to <undefined>"
+  },
+  "candidate_model_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\model\\candidates\\lightgbm_20260511154852",
+  "candidate_reports_dir": "C:\\Users\\hokhi\\Desktop\\cnm-mlops\\reports\\candidates\\lightgbm_20260511154852",
+  "trained_at": "2026-05-11T15:50:02.383113"
 }
