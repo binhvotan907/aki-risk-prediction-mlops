@@ -20,4 +20,5 @@ joblib
 python-multipart
 PyYAML
 mlflow
+prometheus-client
 pytest

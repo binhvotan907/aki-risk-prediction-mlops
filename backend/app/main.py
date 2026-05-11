@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import Base, engine
+from app.core.metrics import metrics_response, prometheus_middleware
 from app.services.model_loader import model_loader
 
 from app.models.user import User
@@ -33,6 +34,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.middleware("http")(prometheus_middleware)
+
 
 @app.on_event("startup")
 def startup():
@@ -54,6 +57,11 @@ def health():
         "status": "ok",
         "model_loaded": model_loader.model is not None,
     }
+
+
+@app.get("/metrics")
+def metrics():
+    return metrics_response()
 
 
 app.include_router(auth_router)
