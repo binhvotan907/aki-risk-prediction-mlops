@@ -36,3 +36,11 @@ Thumbs.db
 
 # MLflow local tracking output, if generated
 mlruns/
+
+# Local MLflow database
+mlflow.db
+
+# Retraining candidate artifacts
+mlops/configs/candidate_*.yaml
+model/candidates/
+reports/candidates/
