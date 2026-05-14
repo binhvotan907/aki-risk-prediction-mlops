@@ -14,6 +14,7 @@ DEFAULT_MODEL_DIR = ROOT_DIR / "model" / "lightgbm"
 DEFAULT_REGISTRY_PATH = ROOT_DIR / "model" / "model_registry.json"
 DEFAULT_MLFLOW_TRACKING_URI = "http://localhost:5000"
 DEFAULT_MLFLOW_MODEL_NAME = "AKI-LightGBM"
+DEFAULT_MLFLOW_EXPERIMENT_NAME = "aki-model-registry"
 
 
 def load_json(path: Path):
@@ -125,6 +126,7 @@ def register_to_mlflow(
     model_dir: Path,
     tracking_uri: str = DEFAULT_MLFLOW_TRACKING_URI,
     registered_model_name: str = DEFAULT_MLFLOW_MODEL_NAME,
+    experiment_name: str = DEFAULT_MLFLOW_EXPERIMENT_NAME,
 ):
     try:
         import mlflow
@@ -133,6 +135,7 @@ def register_to_mlflow(
         raise RuntimeError("mlflow package is not installed") from exc
 
     mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_experiment(experiment_name)
     client = MlflowClient(tracking_uri=tracking_uri)
 
     try:
@@ -169,16 +172,7 @@ def register_to_mlflow(
             if value is not None
         })
 
-        for artifact_name in [
-            "lightgbm_model.pkl",
-            "lightgbm_imputer.pkl",
-            "lightgbm_feature_order.json",
-            "metrics.json",
-            "model_config.json",
-        ]:
-            artifact_path = model_dir / artifact_name
-            if artifact_path.exists():
-                mlflow.log_artifact(str(artifact_path), artifact_path="model")
+        mlflow.log_artifacts(str(model_dir), artifact_path="model")
 
         source = f"runs:/{run.info.run_id}/model"
         model_version = client.create_model_version(
@@ -234,6 +228,7 @@ def main():
     parser.add_argument("--registry-path", default=str(DEFAULT_REGISTRY_PATH), help="JSON registry path")
     parser.add_argument("--mlflow-tracking-uri", default=DEFAULT_MLFLOW_TRACKING_URI)
     parser.add_argument("--mlflow-model-name", default=DEFAULT_MLFLOW_MODEL_NAME)
+    parser.add_argument("--mlflow-experiment-name", default=DEFAULT_MLFLOW_EXPERIMENT_NAME)
     args = parser.parse_args()
 
     model_dir = Path(args.model_dir)
@@ -248,6 +243,7 @@ def main():
             model_dir=model_dir,
             tracking_uri=args.mlflow_tracking_uri,
             registered_model_name=args.mlflow_model_name,
+            experiment_name=args.mlflow_experiment_name,
         )
         print("Registered model to MLflow Model Registry.")
         print(json.dumps(mlflow_result, indent=2, ensure_ascii=False))
@@ -258,6 +254,7 @@ def main():
             model_dir=model_dir,
             tracking_uri=args.mlflow_tracking_uri,
             registered_model_name=args.mlflow_model_name,
+            experiment_name=args.mlflow_experiment_name,
         )
         print(f"Registered model to file registry: {path}")
         print("Registered model to MLflow Model Registry.")
