@@ -1,6 +1,6 @@
 {
   "model_name": "LightGBM",
-  "version": "v1.0.0-20260511154852",
+  "version": "v1.0.0-20260512155203",
   "threshold": 0.7,
   "lookback_hours": 24,
   "prediction_horizon_hours": 24,

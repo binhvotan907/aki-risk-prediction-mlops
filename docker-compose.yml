@@ -30,8 +30,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./mlflow.db:/mlflow/mlflow.db
-      - ./mlruns:/mlflow/mlruns
+      - mlflow_data:/mlflow
     working_dir: /mlflow
     command:
       - mlflow
@@ -79,5 +78,6 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  mlflow_data:
   prometheus_data:
   grafana_data:
