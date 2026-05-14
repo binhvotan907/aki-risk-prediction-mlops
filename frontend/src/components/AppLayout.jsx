@@ -67,7 +67,7 @@ export default function AppLayout({ children }) {
   );
   const visibleDoctorLinks = role === "admin"
     ? doctorLinks.filter((item) => item.to !== "/predict")
-    : doctorLinks;
+    : doctorLinks.filter((item) => item.to !== "/model-info");
 
   const markAssignmentsAsSeen = () => {
     const allIds = Array.from(new Set(assignments.map((assignment) => assignment.id)));

@@ -113,11 +113,11 @@ export default function App() {
         <Route
           path="/model-info"
           element={
-            <ProtectedRoute>
+            <AdminRoute>
               <WithLayout>
                 <ModelInfo />
               </WithLayout>
-            </ProtectedRoute>
+            </AdminRoute>
           }
         />
 
