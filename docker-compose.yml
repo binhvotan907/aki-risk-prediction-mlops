@@ -30,7 +30,8 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - mlflow_data:/mlflow
+      - ./mlflow.db:/mlflow/mlflow.db
+      - ./mlruns:/mlflow/mlruns
     working_dir: /mlflow
     command:
       - mlflow
@@ -38,6 +39,9 @@ services:
       - "--backend-store-uri"
       - "sqlite:////mlflow/mlflow.db"
       - "--default-artifact-root"
+      - "/mlflow/mlruns"
+      - "--serve-artifacts"
+      - "--artifacts-destination"
       - "/mlflow/mlruns"
       - "--host"
       - "0.0.0.0"
@@ -78,6 +82,5 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
-  mlflow_data:
   prometheus_data:
   grafana_data:

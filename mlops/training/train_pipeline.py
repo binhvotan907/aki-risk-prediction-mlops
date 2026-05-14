@@ -126,18 +126,26 @@ def log_to_mlflow(config: dict, metrics: dict, model_dir: Path, reports_dir: Pat
                 "positive_rate_test": summary["positive_rate_test"],
             })
 
-            for artifact_path in [
+            model_artifacts = [
                 model_dir / "lightgbm_model.pkl",
                 model_dir / "lightgbm_imputer.pkl",
                 model_dir / "lightgbm_feature_order.json",
                 model_dir / "metrics.json",
                 model_dir / "model_config.json",
+            ]
+            report_artifacts = [
                 reports_dir / "lightgbm_threshold_tuning.csv",
                 reports_dir / "lightgbm_feature_importance.csv",
                 reports_dir / "training_summary.json",
-            ]:
+            ]
+
+            for artifact_path in model_artifacts:
                 if artifact_path.exists():
-                    mlflow.log_artifact(str(artifact_path))
+                    mlflow.log_artifact(str(artifact_path), artifact_path="model")
+
+            for artifact_path in report_artifacts:
+                if artifact_path.exists():
+                    mlflow.log_artifact(str(artifact_path), artifact_path="reports")
 
         return {"enabled": True, "status": "logged"}
     except Exception as exc:
@@ -255,6 +263,11 @@ def train(config: dict) -> dict:
         "model_dir": str(model_dir),
         "reports_dir": str(reports_dir),
     }
+
+    summary["mlflow"] = {"enabled": config.get("mlflow", {}).get("enabled", False), "status": "pending"}
+
+    with open(reports_dir / "training_summary.json", "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
 
     summary["mlflow"] = log_to_mlflow(
         config=config,
