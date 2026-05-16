@@ -1,33 +1,33 @@
-# Real-time AKI Risk Prediction MLOps
+# Real-time AKI Risk Prediction
 
-Đồ án xây dựng hệ thống phân tích dữ liệu xét nghiệm theo thời gian thực nhằm dự đoán nguy cơ suy thận cấp, theo hướng MLOps. Hệ thống sử dụng dữ liệu MIMIC-IV để xây dựng bộ dữ liệu huấn luyện, huấn luyện và đánh giá nhiều mô hình học máy, chọn mô hình LightGBM tốt nhất để triển khai dự đoán realtime qua API và giao diện web.
+Đồ án xây dựng hệ thống phân tích dữ liệu xét nghiệm theo thời gian thực nhằm dự đoán nguy cơ suy thận cấp. Hệ thống sử dụng dữ liệu MIMIC-IV để xây dựng bộ dữ liệu huấn luyện, so sánh nhiều mô hình học máy và chọn LightGBM làm mô hình triển khai. Bên cạnh chức năng dự đoán, project còn có các thành phần phục vụ quản lý vòng đời mô hình như tracking, registry, monitoring, drift detection, retraining, kiểm thử tự động và public thử nghiệm bằng Cloudflare Tunnel.
 
-## 1. Mục Tiêu Đề Tài
-
-Mục tiêu chính của project:
+## 1. Mục tiêu đề tài
 
 - Xây dựng mô hình dự đoán nguy cơ suy thận cấp dựa trên dữ liệu xét nghiệm lâm sàng.
-- Dự đoán nguy cơ trong khoảng 24 giờ tiếp theo dựa trên lịch sử xét nghiệm 24 giờ trước đó.
-- Triển khai mô hình dưới dạng API realtime.
-- Ghi nhận lịch sử dự đoán, theo dõi bệnh nhân và giám sát hoạt động hệ thống.
-- Chuẩn hóa quy trình MLOps gồm data, training, evaluation, model registry, serving và monitoring.
+- Dự đoán nguy cơ trong 24 giờ tiếp theo dựa trên lịch sử xét nghiệm 24 giờ trước đó.
+- Triển khai mô hình dưới dạng API dự đoán thời gian thực bằng FastAPI.
+- Xây dựng giao diện web cho quản trị viên và bác sĩ.
+- Lưu dữ liệu xét nghiệm, lịch sử dự đoán, latency và phiên bản mô hình vào PostgreSQL.
+- Theo dõi hoạt động hệ thống, phát hiện drift và hỗ trợ huấn luyện lại mô hình.
+- Tích hợp MLflow, Prometheus, Grafana, pgAdmin, Evidently, Pytest và GitHub Actions.
 
 ## 2. Dataset
 
-Dataset gốc được sử dụng:
+Dataset gốc:
 
 ```text
 MIMIC-IV v2.1
 /kaggle/input/datasets/mangeshwagle/mimic-iv-2-1
 ```
 
-Các bảng chính được sử dụng trong quá trình xử lý dữ liệu:
+Các bảng chính được sử dụng:
 
 - `patients.csv`
 - `icustays.csv`
 - `labevents.csv`
 
-Các xét nghiệm được chọn gồm:
+15 chỉ số xét nghiệm đầu vào:
 
 ```text
 creatinine, bun, sodium, potassium, chloride, bicarbonate,
@@ -35,9 +35,7 @@ glucose, calcium, magnesium, phosphate, anion_gap,
 hemoglobin, hematocrit, wbc, platelets
 ```
 
-Do dữ liệu MIMIC-IV có kích thước lớn, bước xử lý raw data ban đầu được thực hiện offline bằng notebook riêng. Project này sử dụng dataset final đã được chuẩn hóa trong thư mục `data/`.
-
-Dataset final:
+Do dữ liệu MIMIC-IV có kích thước lớn, bước xử lý dữ liệu thô được thực hiện offline bằng notebook riêng. Project chính sử dụng dataset final đã được chuẩn hóa trong thư mục `data/`.
 
 ```text
 data/
@@ -48,21 +46,21 @@ data/
 └── dataset_final_report.json
 ```
 
-Kích thước dữ liệu:
+Kích thước dữ liệu final:
 
-| Split | Rows | Columns | Positive Rate |
+| Split | Rows | Columns | Positive rate |
 |---|---:|---:|---:|
 | Train | 428,997 | 47 | 11.30% |
 | Validation | 89,418 | 47 | 11.02% |
 | Test | 89,811 | 47 | 11.94% |
 
-Số feature dùng để train model: `43`.
+Số feature dùng để huấn luyện mô hình: `43`.
 
-## 3. Định Nghĩa Nhãn AKI
+## 3. Định nghĩa nhãn AKI
 
-Tại mỗi thời điểm dự đoán `time_t`, hệ thống lấy dữ liệu xét nghiệm trong 24 giờ trước đó để tạo feature. Nhãn `label` được xác định dựa trên creatinine trong 24 giờ tiếp theo.
+Tại mỗi thời điểm dự đoán, hệ thống lấy dữ liệu xét nghiệm trong 24 giờ trước đó để tạo feature. Nhãn AKI được xác định dựa trên creatinine trong 24 giờ tiếp theo.
 
-Một sample được gán nhãn nguy cơ AKI nếu:
+Một sample được gán nhãn AKI nếu thỏa một trong hai điều kiện:
 
 ```text
 future_max_creatinine - baseline_creatinine >= 0.3
@@ -76,20 +74,20 @@ future_max_creatinine / baseline_creatinine >= 1.5
 
 Trong đó:
 
-- `baseline_creatinine`: giá trị creatinine gần nhất trong cửa sổ quá khứ.
+- `baseline_creatinine`: giá trị creatinine nền trong cửa sổ quá khứ.
 - `future_max_creatinine`: giá trị creatinine lớn nhất trong cửa sổ tương lai 24 giờ.
 
-## 4. Feature Engineering
+## 4. Feature engineering
 
-Từ notebook xử lý dữ liệu ban đầu, nhiều thống kê được tạo cho từng xét nghiệm. Sau đó project chọn bộ feature final phù hợp với realtime serving, gồm:
+Từ 15 chỉ số xét nghiệm gốc, hệ thống tạo các đặc trưng phù hợp cho bài toán dự đoán thời gian thực:
 
-- Các feature kết thúc bằng `_last`
-- Các feature kết thúc bằng `_delta`
-- Các feature missing indicator `_is_missing`
-- `hours_since_icu_intime`
-- `gender_male`
+- Feature dạng `_last`: giá trị xét nghiệm gần nhất.
+- Feature dạng `_delta`: mức thay đổi so với lần xét nghiệm trước.
+- Feature dạng `_is_missing`: đánh dấu dữ liệu thiếu.
+- `hours_since_icu_intime`: thời gian kể từ lúc vào ICU.
+- `gender_male`: đặc trưng nhị phân biểu diễn giới tính nam.
 
-Ví dụ feature quan trọng:
+Ví dụ:
 
 ```text
 creatinine_last
@@ -109,42 +107,29 @@ data/features_dataset_final.json
 model/lightgbm/lightgbm_feature_order.json
 ```
 
-## 5. Kiến Trúc Hệ Thống
-
-Luồng tổng thể:
+## 5. Pipeline tổng thể
 
 ```text
-MIMIC-IV Raw Data
-        ↓
-Offline Data Processing Notebook
-        ↓
-Final Train / Val / Test Dataset
-        ↓
-Training Pipeline
-        ↓
-Evaluation Report
-        ↓
-Model Registry
-        ↓
-FastAPI Model Serving
-        ↓
-React Dashboard
-        ↓
-Prediction Logs / Monitoring
+MIMIC-IV
+  ↓
+Offline data processing
+  ↓
+Final train / validation / test dataset
+  ↓
+Training and evaluation
+  ↓
+MLflow tracking / model registry
+  ↓
+FastAPI realtime serving
+  ↓
+React dashboard
+  ↓
+PostgreSQL prediction logs
+  ↓
+Monitoring / drift detection / retraining
 ```
 
-Các thành phần chính:
-
-```text
-backend/      FastAPI, database, authentication, prediction API
-frontend/     React/Vite dashboard
-mlops/        training, evaluation, model registry scripts
-model/        trained model artifacts
-data/         final dataset artifacts
-reports/      training and evaluation reports
-```
-
-## 6. Cấu Trúc Project
+## 6. Cấu trúc project
 
 ```text
 cnm-mlops/
@@ -164,29 +149,49 @@ cnm-mlops/
 │
 ├── mlops/
 │   ├── configs/
-│   │   └── model_config.yaml
+│   ├── monitoring/
 │   └── training/
-│       ├── train_pipeline.py
-│       ├── evaluate.py
-│       └── register_model.py
+│
+├── monitoring/
+│   ├── grafana/
+│   └── prometheus/
 │
 ├── data/
 ├── model/
 ├── reports/
+├── tests/
 ├── docker-compose.yml
 └── README.md
 ```
 
-## 7. Model Training
+## 7. Công nghệ sử dụng
 
-Project đã thử nghiệm các mô hình:
+| Nhóm | Công nghệ |
+|---|---|
+| Xử lý dữ liệu | Python, Pandas, NumPy, Parquet, JSON |
+| Huấn luyện mô hình | Scikit-learn, LightGBM, XGBoost, Random Forest, Logistic Regression |
+| Lưu artifact | Joblib, JSON |
+| Backend API | FastAPI, Uvicorn, Pydantic |
+| Database | PostgreSQL, SQLAlchemy, pgAdmin |
+| Frontend | React, Vite, Axios, Recharts |
+| Tracking và registry | MLflow, JSON registry, bảng `model_versions` |
+| Monitoring | Prometheus, Grafana, FastAPI monitoring endpoints |
+| Drift detection | Pandas, NumPy, Evidently, PSI |
+| Kiểm thử | Pytest |
+| CI | GitHub Actions |
+| Public demo | Cloudflare Tunnel |
+| Local deployment | Docker Compose |
+
+## 8. Model training
+
+Các mô hình đã thử nghiệm:
 
 - Logistic Regression
 - Random Forest
 - XGBoost
 - LightGBM
 
-Mô hình được chọn để triển khai là **LightGBM**, vì đạt kết quả tổng thể tốt nhất trên tập test.
+Mô hình được chọn để triển khai là **LightGBM** vì đạt kết quả tổng thể tốt nhất trên tập test.
 
 Cấu hình LightGBM:
 
@@ -202,19 +207,13 @@ class_weight: balanced
 random_state: 42
 ```
 
-Training pipeline nằm tại:
-
-```text
-mlops/training/train_pipeline.py
-```
-
 Chạy training:
 
 ```powershell
 .\.venv\Scripts\python.exe mlops\training\train_pipeline.py
 ```
 
-Output sau khi train:
+Artifacts:
 
 ```text
 model/lightgbm/
@@ -234,7 +233,7 @@ reports/
 └── lightgbm_feature_importance.csv
 ```
 
-## 8. Evaluation
+## 9. Evaluation
 
 Chạy evaluate:
 
@@ -261,20 +260,13 @@ Confusion matrix:
 | True 0 | 70,924 | 8,165 |
 | True 1 | 4,484 | 6,238 |
 
-Evaluation output:
+## 10. Model registry
 
-```text
-reports/evaluation_report.json
-reports/confusion_matrix.csv
-```
+Project hỗ trợ hai mức registry:
 
-## 9. Model Registry
-
-Model registry đơn giản được lưu dưới dạng JSON:
-
-```text
-model/model_registry.json
-```
+- `model/model_registry.json`: registry dạng file JSON.
+- `model_versions`: bảng database lưu thông tin phiên bản mô hình.
+- MLflow Model Registry: đăng ký model `AKI-LightGBM` khi chạy script register.
 
 Register model:
 
@@ -282,117 +274,141 @@ Register model:
 .\.venv\Scripts\python.exe mlops\training\register_model.py --backend file --status production
 ```
 
-Script cũng hỗ trợ ghi vào database:
+Hoặc ghi vào database:
 
 ```powershell
 .\.venv\Scripts\python.exe mlops\training\register_model.py --backend database --status production
 ```
 
-Bảng database tương ứng:
+## 11. Backend API
 
-```text
-model_versions
-```
-
-## 10. Backend API
-
-Backend sử dụng:
-
-- FastAPI
-- SQLAlchemy
-- PostgreSQL
-- JWT authentication
-- LightGBM model serving
+Backend sử dụng FastAPI, SQLAlchemy, PostgreSQL, JWT authentication và LightGBM model serving.
 
 Các endpoint chính:
 
 | Endpoint | Chức năng |
 |---|---|
-| `POST /auth/login-json` | Đăng nhập |
-| `GET /auth/me` | Lấy thông tin user |
+| `POST /auth/login` | Đăng nhập OAuth2 cho Swagger |
+| `POST /auth/login-json` | Đăng nhập từ frontend |
+| `GET /auth/me` | Lấy thông tin người dùng hiện tại |
 | `POST /auth/change-password` | Đổi mật khẩu cá nhân |
 | `GET /auth/users` | Admin xem danh sách người dùng |
-| `POST /auth/users` | Admin tạo tài khoản bác sĩ/admin |
-| `PATCH /auth/users/{user_id}/toggle-active` | Admin khóa/mở tài khoản |
+| `POST /auth/users` | Admin tạo tài khoản |
+| `PATCH /auth/users/{user_id}/toggle-active` | Admin khóa hoặc mở tài khoản |
 | `POST /auth/users/{user_id}/reset-password` | Admin reset mật khẩu |
-| `POST /predict` | Dự đoán nguy cơ AKI |
-| `GET /patients/{subject_id}/{stay_id}/timeline` | Timeline bệnh nhân |
-| `GET /patients/assignments` | Admin xem phân công bác sĩ - bệnh nhân |
+| `DELETE /auth/users/{user_id}` | Admin xóa tài khoản |
+| `GET /patients` | Danh sách bệnh nhân |
+| `POST /patients` | Admin tạo bệnh nhân |
+| `GET /patients/assignments` | Admin xem danh sách phân công |
 | `POST /patients/assignments` | Admin phân công bệnh nhân cho bác sĩ |
 | `DELETE /patients/assignments/{assignment_id}` | Admin xóa phân công |
+| `DELETE /patients/{subject_id}/{stay_id}/records` | Admin xóa dữ liệu xét nghiệm và prediction logs |
+| `DELETE /patients/{subject_id}/{stay_id}` | Admin xóa bệnh nhân, phân công và dữ liệu liên quan |
+| `GET /patients/my-assignments` | Bác sĩ xem bệnh nhân được phân công |
+| `GET /patients/{subject_id}/{stay_id}/timeline` | Timeline bệnh nhân |
+| `POST /predict` | Bác sĩ dự đoán nguy cơ AKI |
+| `GET /model/info` | Admin xem thông tin model đang triển khai |
 | `GET /monitoring/summary` | Tổng quan monitoring |
+| `GET /monitoring/advanced` | Monitoring nâng cao |
 | `GET /monitoring/recent` | Lịch sử dự đoán gần đây |
 | `GET /monitoring/drift` | Kiểm tra tín hiệu drift |
-| `GET /model/info` | Thông tin model đang triển khai |
 | `GET /retraining/status` | Trạng thái retraining/model registry |
 | `POST /retraining/trigger` | Kích hoạt retraining |
+| `GET /metrics` | Metrics cho Prometheus |
 
-## 11. Frontend
+## 12. Frontend
 
-Frontend sử dụng:
+Frontend sử dụng React, Vite, Axios và Recharts.
 
-- React
-- Vite
-- Axios
-- Recharts
-
-Các màn hình chính:
+Màn hình chung:
 
 - Login
 - Dashboard
-- Predict
-- Patient Timeline
+- Bệnh nhân
+- Timeline
+- Tài khoản
+
+Màn hình dành cho bác sĩ:
+
+- Dự đoán nguy cơ AKI
+- Xem bệnh nhân được phân công
+- Xem timeline bệnh nhân
+
+Màn hình dành cho quản trị viên:
+
+- Quản lý bệnh nhân
+- Quản lý người dùng
+- Thông tin mô hình
 - Monitoring
-- Model Info
 - Drift Detection
 - Retraining
-- Account
-- User Management
 
-## 12. Cách Chạy Project
+Frontend gọi backend qua biến môi trường:
 
-### 12.1. Chạy PostgreSQL
+```text
+VITE_API_BASE_URL
+```
+
+Nếu không cấu hình biến này, frontend mặc định gọi:
+
+```text
+http://127.0.0.1:8000
+```
+
+## 13. Chạy project local
+
+### 13.1. Chạy Docker services
 
 ```powershell
 docker compose up -d
 ```
 
-PostgreSQL được cấu hình trong `docker-compose.yml`:
+Các service trong Docker Compose:
+
+| Service | URL |
+|---|---|
+| PostgreSQL | `localhost:5432` |
+| pgAdmin | `http://localhost:5050` |
+| MLflow | `http://localhost:5000` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3000` |
+
+Tài khoản Grafana:
 
 ```text
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=aki_mlops
-PORT=5432
+admin / admin123
 ```
 
-### 12.2. Cấu Hình Environment
+Tài khoản pgAdmin:
+
+```text
+admin@example.com / admin123
+```
+
+### 13.2. Cấu hình `.env`
 
 Tạo file `.env` ở thư mục gốc:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/aki_mlops
-SECRET_KEY=your-secret-key
+SECRET_KEY=aki-mlops-secret-key-2026
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
+
 MODEL_DIR=model/lightgbm
 MLFLOW_TRACKING_URI=http://localhost:5000
 ```
 
-### 12.3. Cài Backend Dependencies
+### 13.3. Cài backend dependencies
 
 ```powershell
-cd backend
-..\.venv\Scripts\python.exe -m pip install -r requirements.txt
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 ```
 
-Nếu LightGBM lỗi DLL trên Windows, cài **Microsoft Visual C++ Redistributable 2015-2022 x64** rồi kiểm tra:
+Nếu LightGBM lỗi DLL trên Windows, cài Microsoft Visual C++ Redistributable 2015-2022 x64.
 
-```powershell
-.\.venv\Scripts\python.exe -c "import lightgbm; print(lightgbm.__version__)"
-```
-
-### 12.4. Seed User Demo
+### 13.4. Seed tài khoản demo
 
 ```powershell
 .\.venv\Scripts\python.exe backend\app\seed.py
@@ -402,33 +418,29 @@ Tài khoản demo:
 
 | Role | Username | Password |
 |---|---|---|
-| Doctor | `doctor` | `doctor123` |
 | Admin | `admin` | `admin123` |
+| Doctor | `doctor` | `doctor123` |
 
-Trong môi trường bệnh viện, bác sĩ không tự đăng ký công khai. Quản trị viên tạo tài khoản mới trong màn `Người dùng`, cấp mật khẩu tạm và có thể khóa/mở tài khoản khi cần. Người dùng đăng nhập xong có thể đổi mật khẩu trong màn `Tài khoản`.
-
-Quản trị viên cũng phân công bệnh nhân cho bác sĩ theo cặp `subject_id` và `stay_id`. Admin có quyền xem tất cả bệnh nhân, còn doctor chỉ được dự đoán hoặc xem timeline của bệnh nhân đã được phân công.
-
-### 12.5. Chạy Backend
+### 13.5. Chạy backend
 
 ```powershell
 cd backend
 ..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
-API chạy tại:
+Backend:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Swagger UI:
+Swagger:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-### 12.6. Chạy Frontend
+### 13.6. Chạy frontend
 
 ```powershell
 cd frontend
@@ -436,54 +448,118 @@ npm install
 npm run dev
 ```
 
-Frontend chạy tại:
+Frontend:
 
 ```text
 http://localhost:5173
 ```
 
-## 13. Quy Trình MLOps Trong Project
+## 14. Public thử nghiệm bằng Cloudflare Tunnel
 
-Các bước MLOps hiện có:
+Cloudflare Tunnel được dùng để public tạm thời frontend và backend ra internet mà không cần thuê server cloud.
 
-1. **Data validation**  
-   Dataset final được kiểm tra leakage, missing, duplicate, infinite value và patient overlap.
+### 14.1. Cài cloudflared
 
-2. **Training pipeline**  
-   Script `train_pipeline.py` train LightGBM từ dataset final và lưu artifact.
+```powershell
+winget install --id Cloudflare.cloudflared
+cloudflared --version
+```
 
-3. **Threshold tuning**  
-   Threshold được chọn trên validation set theo F1-score. Threshold tốt nhất là `0.70`.
+### 14.2. Tạo tunnel cho backend
 
-4. **Evaluation**  
-   Script `evaluate.py` đánh giá model trên test set và sinh report.
+Đảm bảo backend đang chạy tại `http://127.0.0.1:8000`, sau đó mở PowerShell mới:
 
-5. **Model registry**  
-   Script `register_model.py` đăng ký model production vào registry.
+```powershell
+cloudflared tunnel --url http://127.0.0.1:8000
+```
 
-6. **Serving**  
-   FastAPI load model artifact và phục vụ realtime prediction.
+Cloudflare sẽ sinh URL dạng:
 
-7. **Monitoring**  
-   Hệ thống lưu prediction logs, latency, risk level và hiển thị trên dashboard admin.
+```text
+https://<backend-tunnel>.trycloudflare.com
+```
 
-8. **Drift detection và retraining**  
-   Admin có thể xem tín hiệu drift cơ bản và kích hoạt lại pipeline train/register model từ giao diện web.
+Kiểm tra:
 
-## 14. Ghi Chú
+```text
+https://<backend-tunnel>.trycloudflare.com/docs
+```
 
-- Project hiện sử dụng dataset final đã được xử lý offline để giảm thời gian chạy.
-- Bước raw data processing từ MIMIC-IV được lưu ở notebook riêng và có thể trình bày trong phụ lục báo cáo.
+### 14.3. Chạy frontend với backend tunnel
+
+```powershell
+cd frontend
+$env:VITE_API_BASE_URL="https://<backend-tunnel>.trycloudflare.com"
+npm run dev -- --host 127.0.0.1
+```
+
+### 14.4. Tạo tunnel cho frontend
+
+Mở PowerShell mới:
+
+```powershell
+cloudflared tunnel --url http://127.0.0.1:5173
+```
+
+Cloudflare sẽ sinh URL dạng:
+
+```text
+https://<frontend-tunnel>.trycloudflare.com
+```
+
+Đây là link public để demo giao diện web.
+
+Lưu ý:
+
+- Link quick tunnel có thể thay đổi mỗi lần chạy.
+- Cần giữ terminal `cloudflared` mở trong lúc demo.
+- Đây là public thử nghiệm, không phải deployment production cố định.
+
+## 15. Kiểm thử
+
+Chạy test:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests
+```
+
+Các nhóm test chính:
+
+- Feature engineering.
+- Input validation.
+- Model loader.
+- Phân quyền predict.
+
+## 16. CI bằng GitHub Actions
+
+Workflow:
+
+```text
+.github/workflows/ci.yml
+```
+
+CI kiểm tra:
+
+- Backend tests bằng Pytest.
+- Frontend build bằng Vite.
+
+## 17. Quy trình vận hành mô hình trong project
+
+1. **Data validation**: kiểm tra leakage, missing, duplicate, infinite value và patient overlap.
+2. **Training pipeline**: huấn luyện LightGBM từ dataset final.
+3. **Threshold tuning**: chọn threshold trên validation set theo F1-score.
+4. **Evaluation**: đánh giá model trên test set.
+5. **Model registry**: đăng ký model production.
+6. **Serving**: FastAPI load model artifact và phục vụ dự đoán thời gian thực.
+7. **Logging**: lưu lab events và prediction logs vào PostgreSQL.
+8. **Monitoring**: theo dõi prediction count, risk level, latency, missing feature và model version.
+9. **Drift detection**: kiểm tra tín hiệu drift bằng dashboard và Evidently report.
+10. **Retraining**: admin kích hoạt huấn luyện lại và promote model nếu đạt điều kiện.
+
+## 18. Ghi chú
+
+- Project sử dụng dataset final đã xử lý offline để giảm thời gian chạy.
+- Notebook xử lý raw MIMIC-IV và notebook huấn luyện thử nghiệm được lưu ở workspace riêng.
 - Model production hiện tại là `LightGBM v1.0.0`.
 - Threshold cảnh báo hiện tại là `0.70`.
-
-## 15. Bổ Sung MLOps
-
-Project đã bổ sung thêm các thành phần MLOps nâng cao:
-
-- **Experiment tracking**: `train_pipeline.py` hỗ trợ log params, metrics và artifacts lên MLflow nếu `mlflow.enabled=true` và MLflow server/package sẵn sàng.
-- **Automated tests**: thư mục `tests/` kiểm tra feature engineering, input validation, model loader và phân quyền predict.
-- **CI/CD**: workflow `.github/workflows/ci.yml` chạy backend tests và frontend build trên GitHub Actions.
-- **Model promotion rule**: retraining train model candidate riêng, chỉ promote lên production nếu F1 và PR-AUC không thấp hơn model production hiện tại.
-- **Monitoring nâng cao**: endpoint `/monitoring/advanced` cung cấp latency p95/p99, missing feature, phân phối model version và xu hướng theo ngày.
-- **Offline raw data documentation**: `mlops/data/README.md` mô tả rõ quy trình xử lý MIMIC-IV offline và dataset final dùng trong project chính.
+- Cloudflare Tunnel chỉ dùng để demo truy cập từ bên ngoài, không thay thế deployment production.
