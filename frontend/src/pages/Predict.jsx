@@ -45,6 +45,7 @@ const labFields = [
 ];
 
 const templateFields = [...patientFields, ...labFields];
+const requiredFields = [...patientFields, ...labFields];
 
 const templateSample = {
   subject_id: 10002,
@@ -74,6 +75,10 @@ function getApiErrorMessage(err) {
     return "Bạn chưa được phân công bệnh nhân này. Vui lòng liên hệ quản trị viên để được cấp quyền.";
   }
 
+  if (err?.response?.status === 422) {
+    return "Dữ liệu chưa hợp lệ hoặc còn thiếu thông tin bắt buộc. Vui lòng kiểm tra lại toàn bộ form.";
+  }
+
   return "Dự đoán thất bại. Vui lòng kiểm tra dữ liệu nhập hoặc máy chủ.";
 }
 
@@ -82,8 +87,14 @@ export default function Predict() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (key, value) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
     setForm({
       ...form,
       [key]: value,
@@ -95,11 +106,42 @@ export default function Predict() {
     return Number(String(value).replace(",", "."));
   };
 
+  const validateForm = () => {
+    const nextErrors = {};
+
+    requiredFields.forEach((key) => {
+      const value = form[key];
+      if (value === "" || value === null || value === undefined) {
+        nextErrors[key] = "Bắt buộc nhập";
+      }
+    });
+
+    ["subject_id", "stay_id", ...labFields].forEach((key) => {
+      const value = form[key];
+      if (value === "" || value === null || value === undefined) return;
+      const numberValue = Number(String(value).replace(",", "."));
+      if (!Number.isFinite(numberValue)) {
+        nextErrors[key] = "Phải là số hợp lệ";
+      }
+    });
+
+    setFieldErrors(nextErrors);
+    return nextErrors;
+  };
+
   const handlePredict = async (e) => {
     e.preventDefault();
     setError("");
     setResult(null);
     setUploadMessage("");
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setError(
+        `Vui lòng nhập đầy đủ thông tin trước khi dự đoán. Các trường cần kiểm tra: ${Object.keys(validationErrors).join(", ")}.`
+      );
+      return;
+    }
 
     const payload = {
       ...form,
@@ -235,30 +277,35 @@ export default function Predict() {
             label="subject_id"
             value={form.subject_id}
             onChange={(v) => handleChange("subject_id", v)}
+            error={fieldErrors.subject_id}
           />
 
           <Input
             label="stay_id"
             value={form.stay_id}
             onChange={(v) => handleChange("stay_id", v)}
+            error={fieldErrors.stay_id}
           />
 
           <Input
             label="gender"
             value={form.gender}
             onChange={(v) => handleChange("gender", v)}
+            error={fieldErrors.gender}
           />
 
           <Input
             label="icu_intime"
             value={form.icu_intime}
             onChange={(v) => handleChange("icu_intime", v)}
+            error={fieldErrors.icu_intime}
           />
 
           <Input
             label="charttime"
             value={form.charttime}
             onChange={(v) => handleChange("charttime", v)}
+            error={fieldErrors.charttime}
           />
         </div>
 
@@ -271,6 +318,7 @@ export default function Predict() {
               label={field}
               value={form[field]}
               onChange={(v) => handleChange(field, v)}
+              error={fieldErrors[field]}
             />
           ))}
         </div>
@@ -330,16 +378,21 @@ export default function Predict() {
   );
 }
 
-function Input({ label, value, onChange }) {
+function Input({ label, value, onChange, error }) {
   return (
-    <div className="field">
-      <label>{label}</label>
+    <div className={`field ${error ? "field-error" : ""}`}>
+      <label>
+        {label} <span className="required-mark">*</span>
+      </label>
       <input
         type="text"
         step="any"
+        required
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        aria-invalid={Boolean(error)}
       />
+      {error && <span className="field-error-text">{error}</span>}
     </div>
   );
 }
@@ -408,7 +461,7 @@ function mapRowToForm(headers, values) {
     }
   });
 
-  const missingRequired = patientFields.filter((field) => !row[field]);
+  const missingRequired = requiredFields.filter((field) => !row[field]);
 
   if (missingRequired.length > 0) {
     throw new Error(`File thiếu cột bắt buộc: ${missingRequired.join(", ")}.`);

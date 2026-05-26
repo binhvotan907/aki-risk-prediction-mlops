@@ -928,6 +928,31 @@ a {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+.required-mark {
+  color: #dc2626;
+  font-weight: 900;
+}
+
+.field-error input,
+.field-error select {
+  border-color: #dc2626;
+  background: #fff7f7;
+}
+
+.field-error input:focus,
+.field-error select:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.field-error-text {
+  display: block;
+  margin-top: 5px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .result-panel {
   margin-top: 28px;
   padding: 24px;

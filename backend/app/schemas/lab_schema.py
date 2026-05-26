@@ -1,7 +1,11 @@
-from typing import Optional
 from datetime import datetime
 
 from pydantic import BaseModel, field_validator, model_validator
+
+'''
+Định nghĩa schema dữ liệu xét nghiệm đầu vào 
+và kiểm tra giá trị hợp lệ trước khi dự đoán.
+'''
 
 
 LAB_VALUE_FIELDS = [
@@ -33,21 +37,21 @@ class LabInput(BaseModel):
     icu_intime: datetime
     charttime: datetime
 
-    creatinine: Optional[float] = None
-    bun: Optional[float] = None
-    sodium: Optional[float] = None
-    potassium: Optional[float] = None
-    chloride: Optional[float] = None
-    bicarbonate: Optional[float] = None
-    glucose: Optional[float] = None
-    calcium: Optional[float] = None
-    magnesium: Optional[float] = None
-    phosphate: Optional[float] = None
-    anion_gap: Optional[float] = None
-    hemoglobin: Optional[float] = None
-    hematocrit: Optional[float] = None
-    wbc: Optional[float] = None
-    platelets: Optional[float] = None
+    creatinine: float
+    bun: float
+    sodium: float
+    potassium: float
+    chloride: float
+    bicarbonate: float
+    glucose: float
+    calcium: float
+    magnesium: float
+    phosphate: float
+    anion_gap: float
+    hemoglobin: float
+    hematocrit: float
+    wbc: float
+    platelets: float
 
     @field_validator("subject_id", "stay_id")
     @classmethod
@@ -66,8 +70,8 @@ class LabInput(BaseModel):
 
     @field_validator(*LAB_VALUE_FIELDS)
     @classmethod
-    def validate_lab_value(cls, value: Optional[float]):
-        if value is not None and value < 0:
+    def validate_lab_value(cls, value: float):
+        if value < 0:
             raise ValueError("lab values cannot be negative")
         return value
 
