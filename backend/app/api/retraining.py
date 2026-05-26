@@ -11,6 +11,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.core.security import require_admin
 from app.models.user import User
 
+'''
+Cho phép admin kích hoạt huấn luyện lại model, 
+đánh giá candidate model 
+và promote nếu kết quả đạt yêu cầu.
+'''
 
 router = APIRouter(prefix="/retraining", tags=["Retraining"])
 
@@ -21,6 +26,7 @@ REGISTRY_PATH = ROOT_DIR / "model" / "model_registry.json"
 MODEL_CONFIG_PATH = ROOT_DIR / "mlops" / "configs" / "model_config.yaml"
 PRODUCTION_MODEL_DIR = ROOT_DIR / "model" / "lightgbm"
 PROMOTION_METRICS = ["f1", "pr_auc"]
+MIN_PRODUCTION_RETRAINING_SAMPLES = 30
 
 
 def read_json(path: Path):
@@ -123,6 +129,8 @@ def trigger_retraining(current_user: User = Depends(require_admin)):
     candidate_model_dir = ROOT_DIR / "model" / "candidates" / f"lightgbm_{run_id}"
     candidate_reports_dir = REPORTS_DIR / "candidates" / f"lightgbm_{run_id}"
     candidate_config_path = ROOT_DIR / "mlops" / "configs" / f"candidate_{run_id}.yaml"
+    production_dataset_dir = ROOT_DIR / "data" / "retraining" / f"lightgbm_{run_id}"
+    production_dataset_summary_path = candidate_reports_dir / "production_dataset_summary.json"
 
     config = read_yaml(MODEL_CONFIG_PATH)
     config["model_version"] = f"{config.get('model_version', 'v1.0.0')}-{run_id}"
@@ -131,6 +139,42 @@ def trigger_retraining(current_user: User = Depends(require_admin)):
     if config.get("mlflow"):
         config["mlflow"]["run_name"] = f"retraining-{run_id}"
     write_yaml(candidate_config_path, config)
+
+    dataset_result = subprocess.run(
+        [
+            sys.executable,
+            "mlops/training/build_dataset_from_postgres.py",
+            "--config",
+            str(candidate_config_path),
+            "--output-dir",
+            str(production_dataset_dir.relative_to(ROOT_DIR)),
+            "--summary",
+            str(production_dataset_summary_path.relative_to(ROOT_DIR)),
+            "--min-samples",
+            str(MIN_PRODUCTION_RETRAINING_SAMPLES),
+        ],
+        cwd=ROOT_DIR,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+    if dataset_result.returncode != 0:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Building production retraining dataset failed",
+                "stdout": dataset_result.stdout,
+                "stderr": dataset_result.stderr,
+            },
+        )
+
+    production_dataset_summary = read_json(production_dataset_summary_path) or {}
+    if production_dataset_summary.get("used_for_training"):
+        config["data"]["train_path"] = str(
+            Path(production_dataset_summary["augmented_train_path"]).relative_to(ROOT_DIR)
+        )
+        write_yaml(candidate_config_path, config)
 
     train_result = subprocess.run(
         [
@@ -159,6 +203,7 @@ def trigger_retraining(current_user: User = Depends(require_admin)):
     if candidate_summary:
         candidate_summary["candidate_model_dir"] = str(candidate_model_dir)
         candidate_summary["candidate_reports_dir"] = str(candidate_reports_dir)
+        candidate_summary["production_dataset"] = production_dataset_summary
         candidate_summary["trained_at"] = datetime.utcnow().isoformat()
         write_json(TRAINING_SUMMARY_PATH, candidate_summary)
 
@@ -199,6 +244,7 @@ def trigger_retraining(current_user: User = Depends(require_admin)):
             "finished_at": datetime.utcnow().isoformat(),
             "candidate_model_dir": str(candidate_model_dir),
             "training_summary": candidate_summary,
+            "production_dataset": production_dataset_summary,
             "promotion": promotion_report,
         }
 
@@ -237,5 +283,6 @@ def trigger_retraining(current_user: User = Depends(require_admin)):
         "finished_at": datetime.utcnow().isoformat(),
         "candidate_model_dir": str(candidate_model_dir),
         "training_summary": candidate_summary,
+        "production_dataset": production_dataset_summary,
         "promotion": promotion_report,
     }
