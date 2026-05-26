@@ -1,3 +1,7 @@
+# Chay toan bo he thong AKI Risk Prediction:
+# PostgreSQL, pgAdmin, MLflow, FastAPI backend, React frontend,
+# Prometheus va Grafana.
+
 services:
   postgres:
     image: postgres:15
@@ -10,6 +14,69 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aki_mlops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: aki_backend:latest
+    container_name: aki_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aki_mlops
+      SECRET_KEY: docker-demo-secret-key
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      MODEL_DIR: model/lightgbm
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./model:/app/model
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./mlops:/app/mlops
+
+  seed:
+    image: aki_backend:latest
+    container_name: aki_seed
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aki_mlops
+      SECRET_KEY: docker-demo-secret-key
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      MODEL_DIR: model/lightgbm
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    volumes:
+      - ./model:/app/model
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./mlops:/app/mlops
+    command: ["python", "app/seed.py"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    container_name: aki_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 
   pgadmin:
     image: dpage/pgadmin4:8
@@ -20,7 +87,8 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
@@ -62,6 +130,8 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.console.libraries=/usr/share/prometheus/console_libraries"
       - "--web.console.templates=/usr/share/prometheus/consoles"
+    depends_on:
+      - backend
 
   grafana:
     image: grafana/grafana:11.3.1

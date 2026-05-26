@@ -133,35 +133,36 @@ Monitoring / drift detection / retraining
 
 ```text
 cnm-mlops/
-├── backend/
+├── backend/                         # FastAPI backend phục vụ API, xác thực, dự đoán và ghi log
 │   └── app/
-│       ├── api/
-│       ├── core/
-│       ├── models/
-│       ├── schemas/
-│       └── services/
+│       ├── api/                     # Các endpoint: auth, predict, patients, monitoring, retraining
+│       ├── core/                    # Cấu hình hệ thống, database, security, Prometheus metrics
+│       ├── models/                  # SQLAlchemy models ánh xạ các bảng PostgreSQL
+│       ├── schemas/                 # Pydantic schemas validate dữ liệu request/response
+│       └── services/                # Logic nghiệp vụ: feature engineering, load model, kiểm tra quyền
 │
-├── frontend/
+├── frontend/                        # React/Vite dashboard cho admin và bác sĩ
 │   └── src/
-│       ├── api/
-│       ├── components/
-│       └── pages/
+│       ├── api/                     # Axios client gọi backend API
+│       ├── components/              # Layout và component dùng chung
+│       └── pages/                   # Các màn hình: login, predict, timeline, monitoring, drift...
 │
-├── mlops/
-│   ├── configs/
-│   ├── monitoring/
-│   └── training/
+├── mlops/                           # Pipeline huấn luyện, đánh giá, registry và drift report
+│   ├── configs/                     # File cấu hình training/model
+│   ├── monitoring/                  # Script tạo drift report bằng PSI/Evidently
+│   └── training/                    # Script train, evaluate và register model
 │
-├── monitoring/
-│   ├── grafana/
-│   └── prometheus/
+├── monitoring/                      # Cấu hình Prometheus và Grafana
+│   ├── grafana/                     # Datasource, dashboard và provisioning cho Grafana
+│   └── prometheus/                  # Cấu hình scrape metrics từ FastAPI
 │
-├── data/
-├── model/
-├── reports/
-├── tests/
-├── docker-compose.yml
-└── README.md
+├── data/                            # Dataset final train/val/test và danh sách feature
+├── data+model/                      # Notebook xử lý dữ liệu và thử nghiệm các mô hình
+├── model/                           # Model production, imputer, feature order, metrics, registry
+├── reports/                         # Báo cáo training, evaluation, confusion matrix, drift report
+├── tests/                           # Pytest kiểm tra feature engineering, validation, model loader, phân quyền
+├── docker-compose.yml               # Chạy toàn bộ stack: backend, frontend, DB và monitoring
+└── README.md                        # Tài liệu mô tả project và hướng dẫn chạy hệ thống
 ```
 
 ## 7. Công nghệ sử dụng
@@ -355,12 +356,52 @@ Nếu không cấu hình biến này, frontend mặc định gọi:
 http://127.0.0.1:8000
 ```
 
-## 13. Chạy project local
+## 13. Chạy nhanh bằng Docker Compose
 
-### 13.1. Chạy Docker services
+Nếu muốn chạy toàn bộ hệ thống bằng một lệnh, dùng:
 
 ```powershell
-docker compose up -d
+docker-compose up --build -d
+```
+
+Lệnh trên sẽ khởi động các thành phần sau:
+
+| Thành phần | URL |
+|---|---|
+| React App | `http://localhost:5173` |
+| FastAPI Backend | `http://127.0.0.1:8000` |
+| FastAPI Swagger | `http://127.0.0.1:8000/docs` |
+| PostgreSQL | `localhost:5432` |
+| pgAdmin | `http://localhost:5050` |
+| MLflow | `http://localhost:5000` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3000` |
+
+Sau khi chạy lệnh trên, service `seed` sẽ tự tạo tài khoản demo:
+
+| Role | Username | Password |
+|---|---|---|
+| Admin | `admin` | `admin123` |
+| Doctor | `doctor` | `doctor123` |
+
+Kiểm tra trạng thái container:
+
+```powershell
+docker-compose ps
+```
+
+Dừng toàn bộ hệ thống:
+
+```powershell
+docker-compose down
+```
+
+## 14. Chạy project local thủ công
+
+### 14.1. Chạy Docker services
+
+```powershell
+docker-compose up -d
 ```
 
 Các service trong Docker Compose:
@@ -385,7 +426,7 @@ Tài khoản pgAdmin:
 admin@example.com / admin123
 ```
 
-### 13.2. Cấu hình `.env`
+### 14.2. Cấu hình `.env`
 
 Tạo file `.env` ở thư mục gốc:
 
@@ -399,7 +440,7 @@ MODEL_DIR=model/lightgbm
 MLFLOW_TRACKING_URI=http://localhost:5000
 ```
 
-### 13.3. Cài backend dependencies
+### 14.3. Cài backend dependencies
 
 ```powershell
 python -m venv .venv
@@ -408,7 +449,7 @@ python -m venv .venv
 
 Nếu LightGBM lỗi DLL trên Windows, cài Microsoft Visual C++ Redistributable 2015-2022 x64.
 
-### 13.4. Seed tài khoản demo
+### 14.4. Seed tài khoản demo
 
 ```powershell
 .\.venv\Scripts\python.exe backend\app\seed.py
@@ -421,7 +462,7 @@ Tài khoản demo:
 | Admin | `admin` | `admin123` |
 | Doctor | `doctor` | `doctor123` |
 
-### 13.5. Chạy backend
+### 14.5. Chạy backend
 
 ```powershell
 cd backend
@@ -440,7 +481,7 @@ Swagger:
 http://127.0.0.1:8000/docs
 ```
 
-### 13.6. Chạy frontend
+### 14.6. Chạy frontend
 
 ```powershell
 cd frontend
@@ -454,18 +495,18 @@ Frontend:
 http://localhost:5173
 ```
 
-## 14. Public thử nghiệm bằng Cloudflare Tunnel
+## 15. Public thử nghiệm bằng Cloudflare Tunnel
 
 Cloudflare Tunnel được dùng để public tạm thời frontend và backend ra internet mà không cần thuê server cloud.
 
-### 14.1. Cài cloudflared
+### 15.1. Cài cloudflared
 
 ```powershell
 winget install --id Cloudflare.cloudflared
 cloudflared --version
 ```
 
-### 14.2. Tạo tunnel cho backend
+### 15.2. Tạo tunnel cho backend
 
 Đảm bảo backend đang chạy tại `http://127.0.0.1:8000`, sau đó mở PowerShell mới:
 
@@ -485,7 +526,7 @@ Kiểm tra:
 https://<backend-tunnel>.trycloudflare.com/docs
 ```
 
-### 14.3. Chạy frontend với backend tunnel
+### 15.3. Chạy frontend với backend tunnel
 
 ```powershell
 cd frontend
@@ -493,7 +534,7 @@ $env:VITE_API_BASE_URL="https://<backend-tunnel>.trycloudflare.com"
 npm run dev -- --host 127.0.0.1
 ```
 
-### 14.4. Tạo tunnel cho frontend
+### 15.4. Tạo tunnel cho frontend
 
 Mở PowerShell mới:
 
@@ -515,7 +556,7 @@ Lưu ý:
 - Cần giữ terminal `cloudflared` mở trong lúc demo.
 - Đây là public thử nghiệm, không phải deployment production cố định.
 
-## 15. Kiểm thử
+## 16. Kiểm thử
 
 Chạy test:
 
@@ -530,7 +571,7 @@ Các nhóm test chính:
 - Model loader.
 - Phân quyền predict.
 
-## 16. CI bằng GitHub Actions
+## 17. CI bằng GitHub Actions
 
 Workflow:
 
@@ -543,7 +584,7 @@ CI kiểm tra:
 - Backend tests bằng Pytest.
 - Frontend build bằng Vite.
 
-## 17. Quy trình vận hành mô hình trong project
+## 18. Quy trình vận hành mô hình trong project
 
 1. **Data validation**: kiểm tra leakage, missing, duplicate, infinite value và patient overlap.
 2. **Training pipeline**: huấn luyện LightGBM từ dataset final.
@@ -556,7 +597,7 @@ CI kiểm tra:
 9. **Drift detection**: kiểm tra tín hiệu drift bằng dashboard và Evidently report.
 10. **Retraining**: admin kích hoạt huấn luyện lại và promote model nếu đạt điều kiện.
 
-## 18. Ghi chú
+## 19. Ghi chú
 
 - Project sử dụng dataset final đã xử lý offline để giảm thời gian chạy.
 - Notebook xử lý raw MIMIC-IV và notebook huấn luyện thử nghiệm được lưu ở workspace riêng.
