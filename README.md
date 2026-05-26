@@ -124,9 +124,13 @@ FastAPI realtime serving
   ↓
 React dashboard
   ↓
-PostgreSQL prediction logs
+PostgreSQL lab events / prediction logs
   ↓
-Monitoring / drift detection / retraining
+Monitoring / drift detection
+  ↓
+Build retraining dataset from lab_events
+  ↓
+Retraining / promote model
 ```
 
 ## 6. Cấu trúc project
@@ -150,7 +154,7 @@ cnm-mlops/
 ├── mlops/                           # Pipeline huấn luyện, đánh giá, registry và drift report
 │   ├── configs/                     # File cấu hình training/model
 │   ├── monitoring/                  # Script tạo drift report bằng PSI/Evidently
-│   └── training/                    # Script train, evaluate và register model
+│   └── training/                    # Script build dataset, train, evaluate và register model
 │
 ├── monitoring/                      # Cấu hình Prometheus và Grafana
 │   ├── grafana/                     # Datasource, dashboard và provisioning cho Grafana
@@ -234,7 +238,46 @@ reports/
 └── lightgbm_feature_importance.csv
 ```
 
-## 9. Evaluation
+## 9. Retraining từ dữ liệu vận hành
+
+Ngoài dataset final trong thư mục `data/`, project hỗ trợ tạo dữ liệu huấn luyện bổ sung từ bảng `lab_events` trong PostgreSQL khi admin kích hoạt retraining.
+
+Luồng retraining:
+
+```text
+lab_events trong PostgreSQL
+  ↓
+Tạo feature từ cửa sổ 24 giờ quá khứ
+  ↓
+Sinh nhãn AKI từ creatinine trong 24 giờ tương lai
+  ↓
+Tạo production_labeled_samples.parquet
+  ↓
+Ghép với train_dataset_final.parquet nếu đủ số sample tối thiểu
+  ↓
+Train candidate LightGBM
+  ↓
+So sánh candidate với production model bằng F1-score và PR-AUC
+  ↓
+Promote nếu đạt, nếu không giữ production model hiện tại
+```
+
+Script tạo dataset retraining:
+
+```text
+mlops/training/build_dataset_from_postgres.py
+```
+
+Khi chạy `POST /retraining/trigger`, backend sẽ tự gọi script trên trước khi train candidate model. Nếu số sample có nhãn từ `lab_events` đạt ngưỡng tối thiểu, hệ thống tạo:
+
+```text
+data/retraining/lightgbm_<run_id>/production_labeled_samples.parquet
+data/retraining/lightgbm_<run_id>/train_augmented.parquet
+```
+
+Nếu chưa đủ dữ liệu mới, hệ thống fallback về dataset final ban đầu để retraining vẫn chạy được trong môi trường demo.
+
+## 10. Evaluation
 
 Chạy evaluate:
 
@@ -261,7 +304,7 @@ Confusion matrix:
 | True 0 | 70,924 | 8,165 |
 | True 1 | 4,484 | 6,238 |
 
-## 10. Model registry
+## 11. Model registry
 
 Project hỗ trợ hai mức registry:
 
@@ -281,7 +324,7 @@ Hoặc ghi vào database:
 .\.venv\Scripts\python.exe mlops\training\register_model.py --backend database --status production
 ```
 
-## 11. Backend API
+## 12. Backend API
 
 Backend sử dụng FastAPI, SQLAlchemy, PostgreSQL, JWT authentication và LightGBM model serving.
 
@@ -317,7 +360,7 @@ Các endpoint chính:
 | `POST /retraining/trigger` | Kích hoạt retraining |
 | `GET /metrics` | Metrics cho Prometheus |
 
-## 12. Frontend
+## 13. Frontend
 
 Frontend sử dụng React, Vite, Axios và Recharts.
 
@@ -356,7 +399,7 @@ Nếu không cấu hình biến này, frontend mặc định gọi:
 http://127.0.0.1:8000
 ```
 
-## 13. Chạy nhanh bằng Docker Compose
+## 14. Chạy nhanh bằng Docker Compose
 
 Nếu muốn chạy toàn bộ hệ thống bằng một lệnh, dùng:
 
@@ -396,9 +439,9 @@ Dừng toàn bộ hệ thống:
 docker-compose down
 ```
 
-## 14. Chạy project local thủ công
+## 15. Chạy project local thủ công
 
-### 14.1. Chạy Docker services
+### 15.1. Chạy Docker services
 
 ```powershell
 docker-compose up -d
@@ -426,7 +469,7 @@ Tài khoản pgAdmin:
 admin@example.com / admin123
 ```
 
-### 14.2. Cấu hình `.env`
+### 15.2. Cấu hình `.env`
 
 Tạo file `.env` ở thư mục gốc:
 
@@ -440,7 +483,7 @@ MODEL_DIR=model/lightgbm
 MLFLOW_TRACKING_URI=http://localhost:5000
 ```
 
-### 14.3. Cài backend dependencies
+### 15.3. Cài backend dependencies
 
 ```powershell
 python -m venv .venv
@@ -449,7 +492,7 @@ python -m venv .venv
 
 Nếu LightGBM lỗi DLL trên Windows, cài Microsoft Visual C++ Redistributable 2015-2022 x64.
 
-### 14.4. Seed tài khoản demo
+### 15.4. Seed tài khoản demo
 
 ```powershell
 .\.venv\Scripts\python.exe backend\app\seed.py
@@ -462,7 +505,7 @@ Tài khoản demo:
 | Admin | `admin` | `admin123` |
 | Doctor | `doctor` | `doctor123` |
 
-### 14.5. Chạy backend
+### 15.5. Chạy backend
 
 ```powershell
 cd backend
@@ -481,7 +524,7 @@ Swagger:
 http://127.0.0.1:8000/docs
 ```
 
-### 14.6. Chạy frontend
+### 15.6. Chạy frontend
 
 ```powershell
 cd frontend
@@ -495,18 +538,18 @@ Frontend:
 http://localhost:5173
 ```
 
-## 15. Public thử nghiệm bằng Cloudflare Tunnel
+## 16. Public thử nghiệm bằng Cloudflare Tunnel
 
 Cloudflare Tunnel được dùng để public tạm thời frontend và backend ra internet mà không cần thuê server cloud.
 
-### 15.1. Cài cloudflared
+### 16.1. Cài cloudflared
 
 ```powershell
 winget install --id Cloudflare.cloudflared
 cloudflared --version
 ```
 
-### 15.2. Tạo tunnel cho backend
+### 16.2. Tạo tunnel cho backend
 
 Đảm bảo backend đang chạy tại `http://127.0.0.1:8000`, sau đó mở PowerShell mới:
 
@@ -526,7 +569,7 @@ Kiểm tra:
 https://<backend-tunnel>.trycloudflare.com/docs
 ```
 
-### 15.3. Chạy frontend với backend tunnel
+### 16.3. Chạy frontend với backend tunnel
 
 ```powershell
 cd frontend
@@ -534,7 +577,7 @@ $env:VITE_API_BASE_URL="https://<backend-tunnel>.trycloudflare.com"
 npm run dev -- --host 127.0.0.1
 ```
 
-### 15.4. Tạo tunnel cho frontend
+### 16.4. Tạo tunnel cho frontend
 
 Mở PowerShell mới:
 
@@ -556,12 +599,18 @@ Lưu ý:
 - Cần giữ terminal `cloudflared` mở trong lúc demo.
 - Đây là public thử nghiệm, không phải deployment production cố định.
 
-## 16. Kiểm thử
+## 17. Kiểm thử
 
-Chạy test:
+Chạy test local:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests
+```
+
+Chạy test bằng Docker Compose:
+
+```powershell
+docker-compose run --rm backend pytest tests
 ```
 
 Các nhóm test chính:
@@ -570,8 +619,9 @@ Các nhóm test chính:
 - Input validation.
 - Model loader.
 - Phân quyền predict.
+- Tạo dataset retraining từ `lab_events` và sinh nhãn AKI từ creatinine tương lai.
 
-## 17. CI bằng GitHub Actions
+## 18. CI bằng GitHub Actions
 
 Workflow:
 
@@ -584,7 +634,7 @@ CI kiểm tra:
 - Backend tests bằng Pytest.
 - Frontend build bằng Vite.
 
-## 18. Quy trình vận hành mô hình trong project
+## 19. Quy trình vận hành mô hình trong project
 
 1. **Data validation**: kiểm tra leakage, missing, duplicate, infinite value và patient overlap.
 2. **Training pipeline**: huấn luyện LightGBM từ dataset final.
@@ -595,11 +645,13 @@ CI kiểm tra:
 7. **Logging**: lưu lab events và prediction logs vào PostgreSQL.
 8. **Monitoring**: theo dõi prediction count, risk level, latency, missing feature và model version.
 9. **Drift detection**: kiểm tra tín hiệu drift bằng dashboard và Evidently report.
-10. **Retraining**: admin kích hoạt huấn luyện lại và promote model nếu đạt điều kiện.
+10. **Build retraining dataset**: tạo sample huấn luyện bổ sung từ `lab_events` nếu có đủ dữ liệu 24 giờ tương lai để sinh nhãn AKI.
+11. **Retraining**: admin kích hoạt huấn luyện lại candidate model và promote model nếu đạt điều kiện.
 
-## 19. Ghi chú
+## 20. Ghi chú
 
 - Project sử dụng dataset final đã xử lý offline để giảm thời gian chạy.
+- Retraining hiện là admin-triggered; tự động chạy định kỳ bằng scheduler/Airflow là hướng mở rộng tiếp theo.
 - Notebook xử lý raw MIMIC-IV và notebook huấn luyện thử nghiệm được lưu ở workspace riêng.
 - Model production hiện tại là `LightGBM v1.0.0`.
 - Threshold cảnh báo hiện tại là `0.70`.
